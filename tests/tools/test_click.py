@@ -11,9 +11,11 @@ def test_click_by_label_uses_pywinauto():
 
     with patch("agent.tools.click.ctypes") as mock_ctypes:
         mock_ctypes.windll.user32.GetForegroundWindow.return_value = 12345
-        with patch("agent.tools.click.Application", return_value=mock_app):
+        with patch("agent.tools.click.Application", return_value=mock_app) as mock_app_class:
             result = click_element.invoke({"label": "Next"})
 
+    mock_app_class.assert_called_once_with(backend="uia")
+    mock_app.connect.assert_called_once_with(handle=12345)
     mock_ctrl.click_input.assert_called_once()
     assert "Next" in result
 
