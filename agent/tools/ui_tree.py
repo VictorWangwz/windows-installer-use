@@ -2,8 +2,6 @@ import ctypes
 import io
 import json
 import base64
-import re
-from typing import Optional
 from langchain_core.tools import tool
 from pywinauto.application import Application
 
@@ -34,13 +32,32 @@ def _try_ui_automation() -> list:
     return controls
 
 
+def _extract_json_array(content: str) -> list:
+    start = content.find("[")
+    if start == -1:
+        return []
+    depth = 0
+    for i, ch in enumerate(content[start:], start):
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(content[start:i + 1])
+                except json.JSONDecodeError:
+                    return []
+    return []
+
+
 def _vision_fallback(model: str) -> list:
     import mss
     import litellm
     from PIL import Image
 
     with mss.mss() as sct:
-        raw = sct.grab(sct.monitors[1])
+        monitor = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
+        raw = sct.grab(monitor)
         img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
         buf = io.BytesIO()
         img.save(buf, format="PNG")
@@ -57,7 +74,7 @@ def _vision_fallback(model: str) -> list:
                         "This is a screenshot of a Windows installer. "
                         "List all interactive elements (buttons, checkboxes, text fields). "
                         "Return ONLY a JSON array. Each object must have: "
-                        "\"type\" (Button/CheckBox/Edit/RadioButton), "
+                        "\"type\" (Button/CheckBox/Edit/RadioButton/ComboBox), "
                         "\"label\" (the visible text on the element), "
                         "\"x\" (center x pixel coordinate), "
                         "\"y\" (center y pixel coordinate). "
@@ -73,13 +90,7 @@ def _vision_fallback(model: str) -> list:
     )
 
     content = response.choices[0].message.content
-    match = re.search(r"\[.*\]", content, re.DOTALL)
-    if not match:
-        return []
-    try:
-        return json.loads(match.group())
-    except json.JSONDecodeError:
-        return []
+    return _extract_json_array(content)
 
 
 def make_get_ui_tree(model: str):
@@ -92,7 +103,10 @@ def make_get_ui_tree(model: str):
             controls = []
 
         if not controls:
-            controls = _vision_fallback(model)
+            try:
+                controls = _vision_fallback(model)
+            except Exception:
+                controls = []
 
         return json.dumps(controls)
 

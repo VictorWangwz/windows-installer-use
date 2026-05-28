@@ -80,9 +80,10 @@ def test_falls_back_to_vision_when_descendants_empty():
     with patch("agent.tools.ui_tree.ctypes") as mock_ctypes:
         mock_ctypes.windll.user32.GetForegroundWindow.return_value = 12345
         with patch("agent.tools.ui_tree.Application", return_value=mock_app):
-            with patch("agent.tools.ui_tree._vision_fallback", return_value=vision_controls):
+            with patch("agent.tools.ui_tree._vision_fallback", return_value=vision_controls) as mock_vision:
                 tool = make_get_ui_tree("claude-sonnet-4-6")
                 result = tool.invoke({})
+                mock_vision.assert_called_once_with("claude-sonnet-4-6")
 
     controls = json.loads(result)
     assert controls[0]["label"] == "Next"
