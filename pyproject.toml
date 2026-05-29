@@ -4,7 +4,6 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "langchain>=0.3.0",
-    "langchain-community>=0.3.0",
     "litellm>=1.50.0",
     "pywinauto>=0.6.8",
     "pyautogui>=0.9.54",

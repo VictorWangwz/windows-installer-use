@@ -1,15 +1,19 @@
 import argparse
+import os
 import subprocess
 from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage
 from agent.agent import build_agent
 
 
 def run(installer_path: str) -> None:
     load_dotenv()
+    if not os.path.isfile(installer_path):
+        raise SystemExit(f"Installer not found: {installer_path}")
     subprocess.Popen([installer_path])
     executor = build_agent()
     result = executor.invoke({
-        "input": f"Click through the installer that just opened ({installer_path}) until installation is complete."
+        "messages": [HumanMessage(content=f"Click through the installer that just opened ({installer_path}) until installation is complete.")]
     })
     output = result.get("output") or result["messages"][-1].content
     print(output)
