@@ -51,6 +51,7 @@ def _extract_json_array(content: str) -> list:
 
 
 def _vision_fallback(model: str) -> list:
+    import os
     import mss
     import litellm
     from PIL import Image
@@ -62,6 +63,12 @@ def _vision_fallback(model: str) -> list:
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         encoded = base64.b64encode(buf.getvalue()).decode()
+
+    extra = {}
+    api_base = os.getenv("OPENAI_API_BASE")
+    if api_base:
+        extra["api_base"] = api_base
+        extra["api_key"] = os.getenv("OPENAI_API_KEY", "no-key")
 
     response = litellm.completion(
         model=model,
@@ -87,6 +94,7 @@ def _vision_fallback(model: str) -> list:
                 },
             ],
         }],
+        **extra,
     )
 
     content = response.choices[0].message.content

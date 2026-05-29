@@ -33,10 +33,24 @@ class AgentExecutor:
         yield from self._graph.stream(input, config=config, **kwargs)
 
 
+def _build_llm(model: str):
+    base_url = os.getenv("OPENAI_API_BASE")
+    if base_url:
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=model,
+            openai_api_key=os.getenv("OPENAI_API_KEY", "no-key"),
+            openai_api_base=base_url,
+        )
+    from langchain.chat_models import init_chat_model
+    return init_chat_model(model)
+
+
 def build_agent() -> AgentExecutor:
     model = os.getenv("MODEL", "anthropic:claude-sonnet-4-6")
     max_steps = int(os.getenv("MAX_STEPS", "30"))
 
+    llm = _build_llm(model)
     tools = build_tools(model)
-    graph = create_agent(model, tools=tools, system_prompt=SYSTEM_PROMPT)
+    graph = create_agent(llm, tools=tools, system_prompt=SYSTEM_PROMPT)
     return AgentExecutor(graph=graph, tools=tools, max_iterations=max_steps, verbose=True)
