@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch, MagicMock
 from agent.agent import build_agent, AgentExecutor
+from agent.prompts import SYSTEM_PROMPT
 
 
 def test_build_agent_returns_agent_executor():
@@ -16,11 +17,9 @@ def test_build_agent_uses_model_env_var():
     with patch.dict(os.environ, {"MODEL": "openai:gpt-4o", "OPENAI_API_KEY": "test-key"}):
         with patch("agent.agent.create_agent", return_value=mock_graph) as mock_create:
             build_agent()
-    mock_create.assert_called_once_with(
-        "openai:gpt-4o",
-        tools=mock_create.call_args[1]["tools"],
-        system_prompt=mock_create.call_args[1]["system_prompt"],
-    )
+    call_args = mock_create.call_args
+    assert call_args[0][0] == "openai:gpt-4o"
+    assert call_args[1]["system_prompt"] == SYSTEM_PROMPT
 
 
 def test_build_agent_respects_max_steps_env_var():

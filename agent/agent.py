@@ -25,11 +25,11 @@ class AgentExecutor:
         self.verbose = verbose
 
     def invoke(self, input: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
-        config = RunnableConfig(recursion_limit=self.max_iterations)
+        config = RunnableConfig(recursion_limit=self.max_iterations * 3)
         return self._graph.invoke(input, config=config, **kwargs)
 
     def stream(self, input: dict[str, Any], **kwargs: Any):
-        config = RunnableConfig(recursion_limit=self.max_iterations)
+        config = RunnableConfig(recursion_limit=self.max_iterations * 3)
         yield from self._graph.stream(input, config=config, **kwargs)
 
 
