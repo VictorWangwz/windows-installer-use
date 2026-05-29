@@ -1,4 +1,3 @@
-import subprocess
 from unittest.mock import patch, MagicMock
 from main import run
 
@@ -23,7 +22,7 @@ def test_run_invokes_agent_with_task():
             run("C:\\fake\\installer.exe")
 
     call_input = mock_executor.invoke.call_args[0][0]["input"]
-    assert "installer.exe" in call_input or "install" in call_input.lower()
+    assert "C:\\fake\\installer.exe" in call_input
 
 
 def test_run_prints_result(capsys):
